@@ -1,0 +1,145 @@
+@page "/add-task"
+@using TaskFlow.Share.DTO.Request
+@using TaskFlow.Share.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@inject HttpClient Client
+@inject NavigationManager Navigation
+@inject ILogger<AddTask> _logger
+
+<PageTitle>Add Task</PageTitle>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-plus-circle"></i> Add New Task</h4>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> @errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="addRequest" OnValidSubmit="HandleAdd" FormName="baydat">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger mb-3" />
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <InputText id="title" class="form-control" @bind-Value="addRequest.Title" />
+                            <ValidationMessage For="@(() => addRequest.Title)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <InputTextArea id="description" class="form-control" rows="4" @bind-Value="addRequest.Description" />
+                            <ValidationMessage For="@(() => addRequest.Description)" class="text-danger" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <InputSelect id="priority" class="form-select" @bind-Value="addRequest.Priority">
+                                    @foreach (var priority in Enum.GetValues<Priority>())
+                                    {
+                                        <option value="@priority">@priority</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => addRequest.Priority)" class="text-danger" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <InputSelect id="status" class="form-select" @bind-Value="addRequest.Status">
+                                    @foreach (var status in Enum.GetValues<Status>())
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => addRequest.Status)" class="text-danger" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="dueDate" class="form-label">Due Date <span class="text-danger">*</span></label>
+                            <InputDate id="dueDate" class="form-control" @bind-Value="addRequest.DueDate" />
+                            <ValidationMessage For="@(() => addRequest.DueDate)" class="text-danger" />
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" @onclick="GoBack">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                @if (_isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check-circle"></i>
+                                }
+                                Add Task
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private TaskAddRequest addRequest = new()
+    {
+        Priority = Priority.Low,
+        Status = Status.PENDING,
+        CreatedDate = DateTime.Now
+    };
+    
+    private bool _isSubmitting = false;
+    private string? errorMessage;
+
+    private async Task HandleAdd()
+    {
+        _isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Client.PostAsJsonAsync("tasks/add", addRequest);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Error: {response.StatusCode} - {error}";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = "Couldn't connect to the server. Please check if the API is running.";
+            _logger.LogError(ex, "Connection error");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error adding task: {ex.Message}";
+            _logger.LogError(ex, "Error adding task");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

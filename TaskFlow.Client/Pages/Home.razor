@@ -1,0 +1,302 @@
+﻿@page "/"
+@inject HttpClient Client
+@using TaskFlow.Share.DTO.Response
+@inject ILogger<Home> _logger
+@inject NavigationManager Navigation
+@using TaskFlow.Client.Components
+<PageTitle>Home</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Tasks</h1>
+        <div>
+            <button class="btn btn-success me-2" @onclick="ShowAddTaskDialog">
+                <i class="bi bi-plus-circle"></i> Add Task
+            </button>
+            <button class="btn btn-primary" @onclick="(() => GetTasks())">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: @(_isLoading ? "inline-block" : "none")"></span>
+                Refresh Tasks
+            </button>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label for="searchBy" class="form-label">Search By</label>
+                    <select id="searchBy" class="form-select" @bind="searchBy">
+                        @foreach (var kvp in searchValues)
+                        {
+                            <option value="@kvp.Key">@kvp.Value</option>
+                        }
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="query" class="form-label">Search</label>
+                    <input type="text" id="query" class="form-control" @bind="query" placeholder="Enter search term..." />
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" @onclick="(() => SearchAsync(query, searchBy))">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-secondary" @onclick="ClearSearchAsync">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @ErrorMessage
+        </div>
+    }
+
+    @if (tasks == null || !tasks.Any())
+    {
+        <div class="alert alert-info" role="alert">
+            No tasks found.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="cursor: pointer;" @onclick="(() => OnSortClick(nameof(TaskResponse.Title)))">
+                            Title
+                            @GetSortIcon(nameof(TaskResponse.Title))
+                        </th>
+                        <th>Description</th>
+                        <th style="cursor: pointer;" @onclick="(() => OnSortClick(nameof(TaskResponse.Priority)))">
+                            Priority
+                            @GetSortIcon(nameof(TaskResponse.Priority))
+                        </th>
+                        <th style="cursor: pointer;" @onclick="(() => OnSortClick(nameof(TaskResponse.DueDate)))">
+                            Due Date
+                            @GetSortIcon(nameof(TaskResponse.DueDate))
+                        </th>
+                        <th style="cursor: pointer;" @onclick="(() => OnSortClick(nameof(TaskResponse.Status)))">
+                            Status
+                            @GetSortIcon(nameof(TaskResponse.Status))
+                        </th>
+                        <th style="cursor: pointer;" @onclick="(() => OnSortClick(nameof(TaskResponse.CreatedDate)))">
+                            Created Date
+                            @GetSortIcon(nameof(TaskResponse.CreatedDate))
+                        </th>
+                        <th>Days Left</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var task in tasks)
+                    {
+                        <tr>
+                            <td style="cursor: pointer;" @onclick="(() => OnTaskClick(task))">@task.Title</td>
+                            <td style="cursor: pointer;" @onclick="(() => OnTaskClick(task))">@task.Description</td>
+                            <td style="cursor: pointer;" @onclick="(() => OnTaskClick(task))">@task.Priority</td>
+                            <td style="cursor: pointer;" @onclick="(() => OnTaskClick(task))">@(task.DueDate?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                            <td style="cursor: pointer;" @onclick="(() => OnTaskClick(task))">@task.Status</td>
+                            <td style="cursor: pointer;" @onclick="(() => OnTaskClick(task))">@(task.CreatedDate?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                            <td style="cursor: pointer;" @onclick="(() => OnTaskClick(task))">@task.DaysLeft</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-2" @onclick="(() => OnUpdateClick(task))" @onclick:stopPropagation="true">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="(() => OnDeleteClick(task))" @onclick:stopPropagation="true">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<ConfirmDialog IsVisible="showDeleteDialog"
+               Title="Confirm Delete"
+               Message="Are you sure you want to delete this task? This action cannot be undone."
+               OnConfirm="HandleDeleteConfirm" />
+
+@code {
+
+    public string? ErrorMessage { get; set; }
+    private List<TaskResponse>? tasks;
+    private bool _isLoading = false;
+    private string? query;
+    private string searchBy = nameof(TaskResponse.Title);
+    private Dictionary<string, string> searchValues = new()
+        {
+            { nameof(TaskResponse.Title), "Title"},
+            { nameof(TaskResponse.Description), "Description"},
+        };
+
+    private TaskResponse? taskToDelete;
+    private bool showDeleteDialog = false;
+    private string? sortBy;
+    private SortDirection sortDirection = SortDirection.None;
+
+    private void ShowAddTaskDialog()
+    {
+        Navigation.NavigateTo("/add-task");
+    }
+
+    private enum SortDirection
+    {
+        None,
+        Ascending,
+        Descending
+    }
+
+    private string GetSortIcon(string columnName)
+    {
+        if (sortBy != columnName)
+            return "";
+
+        return sortDirection switch
+        {
+            SortDirection.Ascending => "⬆️",
+            SortDirection.Descending => "⬇️",
+            _ => ""
+        };
+    }
+
+    private async Task OnSortClick(string columnName)
+    {
+        if (sortBy == columnName)
+        {
+            sortDirection = sortDirection switch
+            {
+                SortDirection.None => SortDirection.Ascending,
+                SortDirection.Ascending => SortDirection.Descending,
+                SortDirection.Descending => SortDirection.None,
+                _ => SortDirection.None
+            };
+
+            if (sortDirection == SortDirection.None)
+                sortBy = null;
+        }
+        else
+        {
+            sortBy = columnName;
+            sortDirection = SortDirection.Ascending;
+        }
+
+        string url = sortDirection switch
+        {
+            SortDirection.Ascending => $"Tasks/index?sortBy={sortBy}&sortOption={SortOption.Asc}",
+            SortDirection.Descending => $"Tasks/index?sortBy={sortBy}&sortOption={SortOption.Desc}",
+            SortDirection.None => "Tasks/index",
+            _ => "Tasks/index"
+        };
+        await GetTasks(url);
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTasks();
+        await base.OnInitializedAsync();
+    }
+
+    async Task GetTasks(string url = "Tasks/index")
+    {
+        _isLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            tasks = await Client.GetFromJsonAsync<List<TaskResponse>>(url);
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = "Could'nt connect to the server";
+            _logger.LogInformation(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "error fetching Data";
+            _logger.LogInformation(ex.Message);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    async Task SearchAsync(string query, string searchBy)
+    {
+        if (!string.IsNullOrWhiteSpace(query) && !string.IsNullOrWhiteSpace(searchBy))
+        {
+            string url = $"Tasks/search?query={query}&searchBy={searchBy}";
+            await GetTasks(url);
+        }
+
+    }
+
+    async Task ClearSearchAsync()
+    {
+        query = null;
+        searchBy = nameof(TaskResponse.Title);
+        await GetTasks();
+    }
+
+    void OnTaskClick(TaskResponse task)
+    {
+        Navigation.NavigateTo($"/task-details/{task.Id}");
+    }
+
+    void OnUpdateClick(TaskResponse task)
+    {
+        Navigation.NavigateTo($"/update-task/{task.Id}");
+    }
+
+
+
+    void OnDeleteClick(TaskResponse task)
+    {
+        taskToDelete = task;
+        showDeleteDialog = true;
+    }
+
+    async Task HandleDeleteConfirm(bool confirmed)
+    {
+        if (confirmed && taskToDelete != null)
+        {
+            try
+            {
+                var response = await Client.DeleteAsync($"Tasks/delete/{taskToDelete.Id}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadFromJsonAsync<string>();
+                    ErrorMessage = error;
+                }
+
+            }
+            catch (HttpRequestException ex)
+            {
+                ErrorMessage = "Could'nt connect to the server";
+                _logger.LogInformation(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"error deleting task with id:{taskToDelete.Id}";
+                _logger.LogInformation(ex.Message);
+            }
+            finally
+            {
+                await GetTasks();
+            }
+        }
+        showDeleteDialog = false;
+        taskToDelete = null;
+    }
+}

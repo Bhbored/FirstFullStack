@@ -1,0 +1,64 @@
+@if (isVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);" @onclick="OnBackdropClick">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> @Title
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="Cancel"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@Message</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" @onclick="Confirm">
+                        <i class="bi bi-check-circle"></i> OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Confirm Delete";
+
+    [Parameter]
+    public string Message { get; set; } = "Are you sure you want to delete this item?";
+
+    [Parameter]
+    public EventCallback<bool> OnConfirm { get; set; }
+
+    private bool isVisible = false;
+
+    protected override void OnParametersSet()
+    {
+        isVisible = IsVisible;
+    }
+
+    private async Task Confirm()
+    {
+        isVisible = false;
+        await OnConfirm.InvokeAsync(true);
+    }
+
+    private async Task Cancel()
+    {
+        isVisible = false;
+        await OnConfirm.InvokeAsync(false);
+    }
+
+    private async Task OnBackdropClick()
+    {
+        await Cancel();
+    }
+}

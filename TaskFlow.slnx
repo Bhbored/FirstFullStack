@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="TaskFlow.Api/TaskFlow.Api.csproj" />
+  <Project Path="TaskFlow.Client/TaskFlow.Client.csproj" />
+  <Project Path="TaskFlow.Share/TaskFlow.Shared.csproj" />
+  <Project Path="TaskFlow.Tests/TaskFlow.Tests.csproj" />
+</Solution>
