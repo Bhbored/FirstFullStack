@@ -1,6 +1,8 @@
-﻿using TaskFlow.Share.Contracts;
+﻿using Microsoft.EntityFrameworkCore;
+using TaskFlow.Share.Contracts;
 using TaskFlow.Share.DTO.Request;
 using TaskFlow.Share.DTO.Response;
+using TaskFlow.Shared.Entities;
 using TaskFlow.Shared.Services;
 
 namespace TaskFlow.Tests
@@ -10,35 +12,35 @@ namespace TaskFlow.Tests
         private readonly ITaskService _taskService;
         public TaskTest()
         {
-            _taskService = new TaskService();
+            _taskService = new TaskService(new TaskDbContext(new DbContextOptionsBuilder<TaskDbContext>().Options));
         }
 
         #region add tests
         [Fact]
-        public void AddTask__NullRequest()
+        public async Task AddTask__NullRequest()
         {
             TaskAddRequest? addRequest = null;
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                _taskService.AddTask(addRequest);
-            });
+            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+             {
+                 await _taskService.AddTask(addRequest);
+             });
         }
 
         [Fact]
-        public void AddTask__InvalidProperties()
+        public async Task AddTask__InvalidProperties()
         {
             TaskAddRequest? addRequest = new()
             {
                 Description = "asasasaas"
             };
-            Assert.Throws<ArgumentException>(() =>
-            {
-                _taskService.AddTask(addRequest);
-            });
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+             {
+                 await _taskService.AddTask(addRequest);
+             });
         }
 
         [Fact]
-        public void AddTask__Success()
+        public async Task AddTask__Success()
         {
             TaskAddRequest? addRequest = new()
             {
@@ -46,8 +48,8 @@ namespace TaskFlow.Tests
                 Description = "Resolve the token expiration issue in the JWT authentication middleware.",
                 DueDate = DateTime.Now.AddDays(3),
             };
-            TaskResponse? expected = _taskService.AddTask(addRequest);
-            var actual = _taskService.GetAllTasks();
+            TaskResponse? expected = await _taskService.AddTask(addRequest);
+            var actual = await _taskService.GetAllTasks();
             Assert.Contains(expected, actual);
             Assert.NotNull(expected?.Id);
         }

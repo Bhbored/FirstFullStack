@@ -2,7 +2,6 @@
 using TaskFlow.Share.Contracts;
 using TaskFlow.Share.DTO.Request;
 using TaskFlow.Share.Enums;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TaskFlow.Api.Controllers
 {
@@ -17,14 +16,14 @@ namespace TaskFlow.Api.Controllers
         }
         [Route("index")]
         [HttpGet]
-        public IActionResult GetallTasks(string? sortBy, SortOption sortOption = SortOption.Desc)
+        public async Task<IActionResult> GetallTasks(string? sortBy, SortOption sortOption = SortOption.Desc)
         {
             try
             {
-                var responses = _taskService.GetAllTasks();
+                var responses = await _taskService.GetAllTasks();
                 if (!string.IsNullOrEmpty(sortBy))
                 {
-                    responses = _taskService.SortTasks(responses, sortBy, sortOption);
+                    responses = await _taskService.SortTasks(responses, sortBy, sortOption);
                 }
                 return Json(responses);
             }
@@ -36,11 +35,11 @@ namespace TaskFlow.Api.Controllers
         }
         [Route("search")]
         [HttpGet]
-        public IActionResult SearchTasks(string query, string searchBy)
+        public async Task<IActionResult> SearchTasks(string query, string searchBy)
         {
             try
             {
-                var responses = _taskService.GetAllTasks(query, searchBy);
+                var responses = await _taskService.GetAllTasks(query, searchBy);
                 return Json(responses);
             }
             catch (Exception ex)
@@ -52,11 +51,11 @@ namespace TaskFlow.Api.Controllers
 
         [Route("{id:csguid}")]
         [HttpGet]
-        public IActionResult GetTaskById(Guid id)
+        public async Task<IActionResult> GetTaskById(Guid id)
         {
             try
             {
-                var response = _taskService.GetTaskById(id);
+                var response = await _taskService.GetTaskById(id);
                 if (response == null)
                     return NotFound($"No task found with ID: {id}");
                 return Json(response);
@@ -72,11 +71,11 @@ namespace TaskFlow.Api.Controllers
         }
         [Route("delete/{id:csguid}")]
         [HttpDelete]
-        public IActionResult DeleteTaskById(Guid id)
+        public async Task<IActionResult> DeleteTaskById(Guid id)
         {
             try
             {
-                var done = _taskService.DeleteTask(id);
+                var done =  await _taskService.DeleteTask(id);
                 if (!done)
                     return BadRequest($"No task found with ID: {id}");
                 return Ok();
@@ -92,7 +91,7 @@ namespace TaskFlow.Api.Controllers
         }
         [Route("update")]
         [HttpPut]
-        public IActionResult UpdateTask([FromBody] TaskUpdateRequest updateRequest)
+        public async Task<IActionResult> UpdateTask([FromBody] TaskUpdateRequest updateRequest)
         {
             try
             {
@@ -101,7 +100,7 @@ namespace TaskFlow.Api.Controllers
                     string errors = string.Join("\n", ModelState.Values.SelectMany(value => value.Errors).Select(err => err.ErrorMessage));
                     return BadRequest(errors);
                 }
-                var response = _taskService.UpdateTask(updateRequest);
+                var response = await _taskService.UpdateTask(updateRequest);
                 return Ok();
             }
             catch (ArgumentException ex)
@@ -116,7 +115,7 @@ namespace TaskFlow.Api.Controllers
 
         [Route("add")]
         [HttpPost]
-        public IActionResult addTask([FromBody] TaskAddRequest addRequest)
+        public async Task<IActionResult> addTask([FromBody] TaskAddRequest addRequest)
         {
             try
             {
@@ -125,7 +124,7 @@ namespace TaskFlow.Api.Controllers
                     string errors = string.Join("\n", ModelState.Values.SelectMany(value => value.Errors).Select(err => err.ErrorMessage));
                     return BadRequest(errors);
                 }
-                var response = _taskService.AddTask(addRequest);
+                var response = await _taskService.AddTask(addRequest);
                 return Ok();
             }
             catch (ArgumentException ex)

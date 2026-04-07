@@ -9,12 +9,12 @@ namespace TaskFlow.Share.Contracts
 {
     public interface ITaskService
     {
-        List<TaskResponse> GetAllTasks(string? query = null, string? searchBy = null);
-        List<TaskResponse> SortTasks(List<TaskResponse> tasks, string sortBy, SortOption sortOption);
-        TaskResponse? AddTask(TaskAddRequest? addRequest);
-        TaskResponse? UpdateTask(TaskUpdateRequest? updateRequest);
-        TaskResponse? GetTaskById(Guid? id);
-        bool DeleteTask(Guid? id);
+        Task<List<TaskResponse>> GetAllTasks(string? query = null, string? searchBy = null);
+        Task<List<TaskResponse>> SortTasks(List<TaskResponse> tasks, string sortBy, SortOption sortOption);
+        Task<TaskResponse?> AddTask(TaskAddRequest? addRequest);
+        Task<TaskResponse?> UpdateTask(TaskUpdateRequest? updateRequest);
+        Task<TaskResponse?> GetTaskById(Guid? id);
+        Task<bool> DeleteTask(Guid? id);
 
     }
 }
