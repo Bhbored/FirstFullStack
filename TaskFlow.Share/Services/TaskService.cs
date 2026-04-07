@@ -34,8 +34,7 @@ namespace TaskFlow.Shared.Services
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
-            var allTasks = await _db.Tasks.ToListAsync();
-            var tobedeleted = allTasks.Find(x => x.Id == id);
+            var tobedeleted = await _db.Tasks.FirstOrDefaultAsync(x => x.Id == id);
             if (tobedeleted == null)
                 return false;
             else
@@ -48,7 +47,8 @@ namespace TaskFlow.Shared.Services
 
         public async Task<List<TaskResponse>> GetAllTasks(string? query = null, string? searchBy = null)
         {
-            var allTasks = await _db.Tasks.ToListAsync();
+            var allTasks = await _db.Tasks.Include("Category").ToListAsync();
+            //var allTasks = _db.sp_GetAllTasks();//sp appraoch
             var response = allTasks.ConvertAll(x => x.ToTaskResponse());
             List<TaskResponse> tasks = new();
             if (!string.IsNullOrWhiteSpace(query) && !string.IsNullOrWhiteSpace(searchBy))
@@ -70,8 +70,7 @@ namespace TaskFlow.Shared.Services
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
-            var allTasks = await _db.Tasks.ToListAsync();
-            var task = allTasks.Find(x => x.Id == id);
+            var task = await _db.Tasks.FirstOrDefaultAsync(x => x.Id == id);
             if (task != null)
                 return task.ToTaskResponse();
             else throw new ArgumentException(string.Format("No Task Found with that Id", nameof(id)));
@@ -110,6 +109,14 @@ namespace TaskFlow.Shared.Services
             tobeupdate.Title = updateRequest.Title;
             await _db.SaveChangesAsync();
             return tobeupdate.ToTaskResponse();
+        }
+        public async Task<List<TaskResponse>> GetByPriority(Priority priority)
+        {
+
+         
+            var taskResponses = _db.sp_GetTasksByPriority(priority);
+            var response = taskResponses.ConvertAll(x => x.ToTaskResponse());
+            return response;
         }
     }
 }

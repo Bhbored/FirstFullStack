@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Bogus;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,6 +17,7 @@ namespace TaskFlow.Shared.Entities
         }
 
         public DbSet<Task> Tasks { get; set; }
+        public DbSet<Category> Categories { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -126,6 +130,45 @@ namespace TaskFlow.Shared.Entities
             {
                 modelBuilder.Entity<Task>().HasData(item);
             }
+
+            //FLUENT API
+            modelBuilder.Entity<Task>()
+                .Property(t => t.EstimatedHours)
+                .HasColumnName("EstimatedHours")
+                .HasColumnType("INT")
+                .HasDefaultValue(1);
+
+            modelBuilder.Entity<Task>()
+                .HasOne(t => t.Category)
+                .WithMany(c => c.Tasks)
+                .HasForeignKey(t => t.CategoryId);
+
+            //modelBuilder.Entity<Task>()
+            //    .HasIndex(t => t.CategoryId)
+            //    .IsUnique(); i still don't know composite keys and unique indexes, so i will leave it for now
+
+
+            modelBuilder.Entity<Task>()
+                .ToTable("Tasks", t => t.HasCheckConstraint("CK_Tasks_DueDate_Future", "[DueDate] >= [CreatedDate]"));
         }
+
+
+
+        public List<Task> sp_GetAllTasks()
+        {
+            return Tasks.FromSqlRaw("[dbo].[GetAllTasks]").ToList() ?? [];
+
+        }
+        public List<Task> sp_GetTasksByPriority(Priority priority)
+        {
+            SqlParameter[] parameters = {
+        new SqlParameter("@Priority", (int)priority)
+    };
+
+            return Tasks
+                .FromSqlRaw("EXECUTE [dbo].[GetTasksByPriority] @Priority", parameters)
+                .ToList();
+        }
+
     }
 }

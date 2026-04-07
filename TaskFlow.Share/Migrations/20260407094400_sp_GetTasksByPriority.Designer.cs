@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskFlow.Shared.Entities;
 
@@ -11,9 +12,11 @@ using TaskFlow.Shared.Entities;
 namespace TaskFlow.Shared.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    partial class TaskDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407094400_sp_GetTasksByPriority")]
+    partial class sp_GetTasksByPriority
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,9 +31,6 @@ namespace TaskFlow.Shared.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -39,12 +39,6 @@ namespace TaskFlow.Shared.Migrations
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("EstimatedHours")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INT")
-                        .HasDefaultValue(1)
-                        .HasColumnName("EstimatedHours");
 
                     b.Property<int?>("Priority")
                         .HasColumnType("int");
@@ -57,12 +51,7 @@ namespace TaskFlow.Shared.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("Tasks", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Tasks_DueDate_Future", "[DueDate] >= [CreatedDate]");
-                        });
+                    b.ToTable("Tasks");
 
                     b.HasData(
                         new
@@ -71,7 +60,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Write comprehensive documentation for all API endpoints including request/response examples",
                             DueDate = new DateTime(2025, 5, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 1,
                             Status = 0,
                             Title = "Complete API Documentation"
@@ -82,7 +70,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 7, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Resolve the JWT token expiration issue in the login endpoint",
                             DueDate = new DateTime(2025, 4, 8, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 2,
                             Status = 0,
                             Title = "Fix Authentication Bug"
@@ -93,7 +80,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Add unit tests for the TaskService class with 90% code coverage",
                             DueDate = new DateTime(2025, 5, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 1,
                             Status = 0,
                             Title = "Implement Unit Tests"
@@ -104,7 +90,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 5, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Update all outdated NuGet packages to latest stable versions",
                             DueDate = new DateTime(2025, 5, 21, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 0,
                             Status = 0,
                             Title = "Update NuGet Packages"
@@ -115,7 +100,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 3, 31, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Review and optimize slow-performing database queries",
                             DueDate = new DateTime(2025, 5, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 1,
                             Status = 2,
                             Title = "Optimize Database Queries"
@@ -126,7 +110,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 3, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Create reusable UI components for the task management dashboard",
                             DueDate = new DateTime(2025, 5, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 1,
                             Status = 0,
                             Title = "Design New UI Components"
@@ -137,7 +120,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Review pull requests from team members and provide feedback",
                             DueDate = new DateTime(2025, 5, 9, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 1,
                             Status = 0,
                             Title = "Code Review Session"
@@ -148,7 +130,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Deploy latest version to production environment with zero downtime",
                             DueDate = new DateTime(2025, 5, 11, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 1,
                             Status = 0,
                             Title = "Deploy to Production"
@@ -159,7 +140,6 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 4, 4, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Document all changes and features for the upcoming v2.0 release",
                             DueDate = new DateTime(2025, 5, 19, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 0,
                             Status = 0,
                             Title = "Write Release Notes"
@@ -170,39 +150,10 @@ namespace TaskFlow.Shared.Migrations
                             CreatedDate = new DateTime(2025, 3, 28, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Description = "Perform security audit and vulnerability assessment",
                             DueDate = new DateTime(2025, 5, 13, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            EstimatedHours = 0,
                             Priority = 1,
                             Status = 2,
                             Title = "Security Audit"
                         });
-                });
-
-            modelBuilder.Entity("TaskFlow.Shared.Entities.Category", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("TaskFlow.Share.Entities.Task", b =>
-                {
-                    b.HasOne("TaskFlow.Shared.Entities.Category", "Category")
-                        .WithMany("Tasks")
-                        .HasForeignKey("CategoryId");
-
-                    b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("TaskFlow.Shared.Entities.Category", b =>
-                {
-                    b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618
         }

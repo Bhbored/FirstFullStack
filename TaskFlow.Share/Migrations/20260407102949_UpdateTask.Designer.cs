@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskFlow.Shared.Entities;
 
@@ -11,9 +12,11 @@ using TaskFlow.Shared.Entities;
 namespace TaskFlow.Shared.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    partial class TaskDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407102949_UpdateTask")]
+    partial class UpdateTask
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,9 +29,6 @@ namespace TaskFlow.Shared.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("CreatedDate")
@@ -57,12 +57,7 @@ namespace TaskFlow.Shared.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
-                    b.ToTable("Tasks", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Tasks_DueDate_Future", "[DueDate] >= [CreatedDate]");
-                        });
+                    b.ToTable("Tasks");
 
                     b.HasData(
                         new
@@ -175,34 +170,6 @@ namespace TaskFlow.Shared.Migrations
                             Status = 2,
                             Title = "Security Audit"
                         });
-                });
-
-            modelBuilder.Entity("TaskFlow.Shared.Entities.Category", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("TaskFlow.Share.Entities.Task", b =>
-                {
-                    b.HasOne("TaskFlow.Shared.Entities.Category", "Category")
-                        .WithMany("Tasks")
-                        .HasForeignKey("CategoryId");
-
-                    b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("TaskFlow.Shared.Entities.Category", b =>
-                {
-                    b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618
         }

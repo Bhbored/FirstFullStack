@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskFlow.Shared.Entities;
 
@@ -11,9 +12,11 @@ using TaskFlow.Shared.Entities;
 namespace TaskFlow.Shared.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    partial class TaskDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407104729_AddCategory")]
+    partial class AddCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -59,10 +62,7 @@ namespace TaskFlow.Shared.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Tasks", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Tasks_DueDate_Future", "[DueDate] >= [CreatedDate]");
-                        });
+                    b.ToTable("Tasks");
 
                     b.HasData(
                         new
